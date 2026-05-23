@@ -5,6 +5,11 @@ from .file_processor import ALLOWED_EXTENSIONS, MAX_FILE_SIZE_MB
 import os
 
 
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True)

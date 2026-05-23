@@ -1,5 +1,4 @@
 from django.test import TestCase
-from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from .models import User, VideoHistory
@@ -24,14 +23,14 @@ class AuthAPITest(TestCase):
             'password': 'NewPass123!',
             'password2': 'NewPass123!',
             'language': 'en'
-        })
+        }, content_type='application/json')
         self.assertEqual(response.status_code, 201)
 
     def test_login_returns_200(self):
         response = self.client.post('/api/auth/login/', {
             'email': 'test@example.com',
             'password': 'TestPass123!'
-        })
+        }, content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('access', response.data)
         self.assertIn('refresh', response.data)
@@ -40,7 +39,7 @@ class AuthAPITest(TestCase):
         response = self.client.post('/api/auth/login/', {
             'email': 'test@example.com',
             'password': 'wrongpassword'
-        })
+        }, content_type='application/json')
         self.assertEqual(response.status_code, 401)
 
     def test_profile_authenticated_returns_200(self):
@@ -57,11 +56,11 @@ class AuthAPITest(TestCase):
         login_response = self.client.post('/api/auth/login/', {
             'email': 'test@example.com',
             'password': 'TestPass123!'
-        })
+        }, content_type='application/json')
         self.client.force_authenticate(user=self.user)
         response = self.client.post('/api/auth/logout/', {
             'refresh': login_response.data['refresh']
-        })
+        }, content_type='application/json')
         self.assertEqual(response.status_code, 200)
 
     def test_change_password_returns_200(self):
@@ -69,17 +68,17 @@ class AuthAPITest(TestCase):
         response = self.client.post('/api/auth/change-password/', {
             'old_password': 'TestPass123!',
             'new_password': 'NewPass456!'
-        })
+        }, content_type='application/json')
         self.assertEqual(response.status_code, 200)
 
     def test_token_refresh_returns_200(self):
         login_response = self.client.post('/api/auth/login/', {
             'email': 'test@example.com',
             'password': 'TestPass123!'
-        })
+        }, content_type='application/json')
         response = self.client.post('/api/auth/token/refresh/', {
             'refresh': login_response.data['refresh']
-        })
+        }, content_type='application/json')
         self.assertEqual(response.status_code, 200)
 
 
@@ -101,14 +100,14 @@ class VideoAPITest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_video_process_no_url_returns_400(self):
-        response = self.client.post('/api/videos/process/', {})
+        response = self.client.post('/api/videos/process/', {}, content_type='application/json')
         self.assertEqual(response.status_code, 400)
 
     def test_video_process_with_url_returns_202(self):
         response = self.client.post('/api/videos/process/', {
             'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             'language': 'en'
-        })
+        }, content_type='application/json')
         self.assertEqual(response.status_code, 202)
 
     def test_video_detail_not_found_returns_404(self):

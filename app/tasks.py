@@ -6,9 +6,30 @@ from .models import VideoHistory
 
 
 AI_PROVIDERS = [
-    {'name': 'groq', 'url': 'https://api.groq.com/openai/v1/chat/completions', 'key_setting': 'GROQ_API_KEY', 'model': 'llama3-70b-8192'},
-    {'name': 'deepseek', 'url': 'https://api.deepseek.com/v1/chat/completions', 'key_setting': 'DEEPSEEK_API_KEY', 'model': 'deepseek-chat'},
-    {'name': 'openrouter', 'url': 'https://openrouter.ai/api/v1/chat/completions', 'key_setting': 'OPENROUTER_API_KEY', 'model': 'mistralai/mixtral-8x7b-instruct'},
+    {
+        'name': 'groq',
+        'url': 'https://api.groq.com/openai/v1/chat/completions',
+        'key_setting': 'GROQ_API_KEY',
+        'model': 'llama-3.3-70b-versatile'
+    },
+    {
+        'name': 'groq-gemma',
+        'url': 'https://api.groq.com/openai/v1/chat/completions',
+        'key_setting': 'GROQ_API_KEY',
+        'model': 'gemma2-9b-it'
+    },
+    {
+        'name': 'deepseek',
+        'url': 'https://api.deepseek.com/v1/chat/completions',
+        'key_setting': 'DEEPSEEK_API_KEY',
+        'model': 'deepseek-chat'
+    },
+    {
+        'name': 'openrouter',
+        'url': 'https://openrouter.ai/api/v1/chat/completions',
+        'key_setting': 'OPENROUTER_API_KEY',
+        'model': 'mistralai/mistral-7b-instruct'
+    },
 ]
 
 LANGUAGE_NAMES = {
@@ -41,8 +62,15 @@ Reply ONLY in {lang_name}."""
         try:
             response = httpx.post(
                 provider['url'],
-                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
-                json={'model': provider['model'], 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': 2000},
+                headers={
+                    'Authorization': f'Bearer {api_key}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'model': provider['model'],
+                    'messages': [{'role': 'user', 'content': prompt}],
+                    'max_tokens': 2000
+                },
                 timeout=30.0
             )
             if response.status_code == 200:
@@ -107,7 +135,7 @@ def process_video_task(self, video_id: int):
     except Exception as e:
         VideoHistory.objects.filter(id=video_id).update(status='failed')
         raise self.retry(exc=e, countdown=5, max_retries=2)
-    
+
 
 @shared_task(bind=True)
 def process_file_task(self, video_id: int, file_path: str, file_extension: str):

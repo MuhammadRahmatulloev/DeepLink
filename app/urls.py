@@ -6,7 +6,6 @@ from . import views
 router = DefaultRouter()
 router.register('auth', views.AuthViewSet, basename='auth')
 router.register('videos', views.VideoViewSet, basename='videos')
-router.register('auth', views.GoogleAuthViewSet, basename='google-auth')
 
 urlpatterns = [
     path('', include(router.urls)),
