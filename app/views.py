@@ -244,7 +244,16 @@ class VideoViewSet(viewsets.ViewSet):
         return [IsAuthenticated(), IsEmailVerified()]
 
     @extend_schema(
-        request=FileUploadSerializer,
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'file': {'type': 'string', 'format': 'binary'},
+                    'language': {'type': 'string', 'enum': ['en', 'ru', 'tj']}
+                },
+                'required': ['file']
+            }
+        },
         responses={202: {'type': 'object', 'properties': {
             'task_id': {'type': 'string'},
             'video_id': {'type': 'integer'},

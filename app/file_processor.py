@@ -77,9 +77,12 @@ def extract_text(file_path: str, file_extension: str) -> str:
     elif ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']:
         text, _ = extract_text_from_image(file_path)
         return text
+    elif ext == '.txt':
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read().strip()
     else:
         raise ValueError(f'Unsupported file type: {ext}')
 
 
-ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.jpg', '.jpeg', '.png', '.bmp', '.tiff']
+ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.txt']
 MAX_FILE_SIZE_MB = 20

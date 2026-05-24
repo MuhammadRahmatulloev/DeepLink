@@ -2,6 +2,7 @@ import os
 import httpx
 from celery import shared_task
 from django.conf import settings
+from django.core.cache import cache
 from .models import VideoHistory
 
 
@@ -127,6 +128,7 @@ def process_video_task(self, video_id: int):
         video.ai_provider_used = provider
         video.status = 'done'
         video.save()
+        cache.delete(f'video_history_{video.user_id}')
 
         if os.path.exists(f'{audio_path}.mp3'):
             os.remove(f'{audio_path}.mp3')
@@ -163,6 +165,7 @@ def process_file_task(self, video_id: int, file_path: str, file_extension: str):
         video.ai_provider_used = provider
         video.status = 'done'
         video.save()
+        cache.delete(f'video_history_{video.user_id}')
 
         if os.path.exists(file_path):
             os.remove(file_path)
