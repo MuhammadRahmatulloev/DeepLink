@@ -41,25 +41,39 @@ class AuthViewSet(viewsets.ViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         user = serializer.save()
         token = EmailVerificationToken.objects.create(user=user)
-        verify_url = f"{request.scheme}://{request.get_host()}/api/auth/verify-email/{token.token}/"
         send_mail(
-            subject='Verify your DeepLink account',
-            message=f'Click the link to verify your email: {verify_url}',
+            subject='Your DeepLink verification code',
+            message=f'Your verification code: {token.code}',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=False,
         )
-        return Response({'message': 'Registration successful. Check your email.'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Registration successful. Check your email for the 6-digit code.'}, status=status.HTTP_201_CREATED)
 
     @extend_schema(
+        request={'application/json': {
+            'type': 'object',
+            'properties': {
+                'email': {'type': 'string'},
+                'code': {'type': 'string', 'example': '123456'}
+            },
+            'required': ['email', 'code']
+        }},
         responses={200: {'type': 'object', 'properties': {'message': {'type': 'string'}}}}
     )
-    @action(detail=False, methods=['get'], url_path='verify-email/(?P<token>[^/.]+)')
-    def verify_email(self, request, token=None):
+    @action(detail=False, methods=['post'], url_path='verify-email', parser_classes=[JSONParser])
+    def verify_email(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        if not email or not code:
+            return Response({'error': 'email and code are required'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            verification = EmailVerificationToken.objects.get(token=token, is_used=False)
-        except EmailVerificationToken.DoesNotExist:
-            return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.get(email=email)
+            verification = EmailVerificationToken.objects.filter(
+                user=user, code=code, is_used=False
+            ).latest('created_at')
+        except (User.DoesNotExist, EmailVerificationToken.DoesNotExist):
+            return Response({'error': 'Invalid code or email'}, status=status.HTTP_400_BAD_REQUEST)
         verification.user.is_email_verified = True
         verification.user.is_active = True
         verification.user.save()
@@ -300,3 +314,44 @@ class VideoViewSet(viewsets.ViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except VideoHistory.DoesNotExist:
             return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    @extend_schema(
+        request={'multipart/form-data': {
+            'type': 'object',
+            'properties': {
+                'image': {'type': 'string', 'format': 'binary'},
+                'language': {'type': 'string', 'enum': ['en', 'ru', 'tj']}
+            },
+            'required': ['image']
+        }},
+        responses={200: {'type': 'object', 'properties': {
+            'text': {'type': 'string'},
+            'char_count': {'type': 'integer'}
+        }}}
+    )
+    @action(detail=False, methods=['post'], url_path='extract-image', parser_classes=[MultiPartParser, FormParser])
+    def extract_image(self, request):
+        image = request.FILES.get('image')
+        if not image:
+            return Response({'error': 'image is required'}, status=status.HTTP_400_BAD_REQUEST)
+        allowed = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']
+        ext = os.path.splitext(image.name)[1].lower()
+        if ext not in allowed:
+            return Response({'error': f'Allowed formats: {", ".join(allowed)}'}, status=status.HTTP_400_BAD_REQUEST)
+        if image.size > 10 * 1024 * 1024:
+            return Response({'error': 'Max image size: 10MB'}, status=status.HTTP_400_BAD_REQUEST)
+        tmp_path = f'/tmp/deeplink_img_{request.user.id}{ext}'
+        with open(tmp_path, 'wb') as f:
+            for chunk in image.chunks():
+                f.write(chunk)
+        try:
+            from .file_processor import extract_text_from_image
+            text = extract_text_from_image(tmp_path)
+            if not text:
+                return Response({'error': 'No text found in image'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response({'text': text, 'char_count': len(text)})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)

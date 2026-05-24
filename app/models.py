@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 import uuid
+import random
 
 
 class User(AbstractUser):
@@ -9,7 +10,7 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     language = models.CharField(
         max_length=5,
-        choices=[('en', 'English'), ('ru', 'Russian'), ('tg', 'Tajik')],
+        choices=[('en', 'English'), ('ru', 'Russian'), ('tj', 'Tajik')],
         default='en'
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -23,12 +24,17 @@ class User(AbstractUser):
 
 class EmailVerificationToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verification_tokens')
-    token = models.UUIDField(default=uuid.uuid4, unique=True)
+    code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     is_used = models.BooleanField(default=False)
 
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = str(random.randint(100000, 999999))
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.user.email} - {self.token}"
+        return f"{self.user.email} - {self.code}"
 
 
 class VideoHistory(models.Model):

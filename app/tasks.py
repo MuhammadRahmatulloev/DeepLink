@@ -35,7 +35,7 @@ AI_PROVIDERS = [
 LANGUAGE_NAMES = {
     'en': 'English',
     'ru': 'Russian',
-    'tg': 'Tajik',
+    'tj': 'Tajik',
 }
 
 
@@ -95,6 +95,7 @@ def download_audio(url: str, output_path: str) -> str:
         'outtmpl': output_path,
         'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
         'quiet': True,
+        'cookiefile': 'cookies.txt',
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)

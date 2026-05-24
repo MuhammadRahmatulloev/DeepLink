@@ -10,4 +10,4 @@ router.register('videos', views.VideoViewSet, basename='videos')
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
-]
+]   

@@ -67,7 +67,7 @@ class VideoHistorySerializer(serializers.ModelSerializer):
 
 class FileUploadSerializer(serializers.Serializer):
     file = serializers.FileField()
-    language = serializers.ChoiceField(choices=['en', 'ru', 'tg'], default='en')
+    language = serializers.ChoiceField(choices=['en', 'ru', 'tj'], default='en')
 
     def validate_file(self, value):
         ext = os.path.splitext(value.name)[1].lower()

@@ -19,10 +19,10 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(EmailVerificationToken)
 class EmailVerificationTokenAdmin(admin.ModelAdmin):
-    list_display = ['user', 'token', 'is_used', 'created_at']
+    list_display = ['user', 'code', 'is_used', 'created_at']
     list_filter = ['is_used']
     search_fields = ['user__email']
-    readonly_fields = ['token', 'created_at']
+    readonly_fields = ['code', 'created_at']
 
 
 @admin.register(VideoHistory)
