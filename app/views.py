@@ -21,6 +21,8 @@ from .serializers import (
 from .tasks import process_video_task, process_file_task
 from .permissions import IsEmailVerified, IsOwnerOrAdmin
 from .pagination import StandardPagination
+import httpx
+from django.conf import settings
 
 
 class AuthViewSet(viewsets.ViewSet):
@@ -188,6 +190,51 @@ class AuthViewSet(viewsets.ViewSet):
             'created': created
         })
 
+def correct_ocr_text(raw_text: str) -> tuple[str, str]:
+    import httpx
+    providers = [
+        {
+            'name': 'groq',
+            'url': 'https://api.groq.com/openai/v1/chat/completions',
+            'key': getattr(settings, 'GROQ_API_KEY', None),
+            'model': 'llama-3.3-70b-versatile'
+        },
+        {
+            'name': 'deepseek',
+            'url': 'https://api.deepseek.com/v1/chat/completions',
+            'key': getattr(settings, 'DEEPSEEK_API_KEY', None),
+            'model': 'deepseek-chat'
+        },
+    ]
+    for p in providers:
+        if not p['key']:
+            continue
+        try:
+            response = httpx.post(
+                p['url'],
+                headers={'Authorization': f'Bearer {p["key"]}', 'Content-Type': 'application/json'},
+                json={
+                    'model': p['model'],
+                    'messages': [
+                        {
+                            'role': 'system',
+                            'content': 'You are an OCR text corrector. You receive text with OCR errors. You must return ONLY the corrected text in the same language. No translation. No explanation. No comments. Just the fixed text.'
+                        },
+                        {
+                            'role': 'user',
+                            'content': raw_text
+                        }
+                    ],
+                    'max_tokens': 2000,
+                    'temperature': 0.1
+                },
+                timeout=30.0
+            )
+            if response.status_code == 200:
+                return response.json()['choices'][0]['message']['content'].strip(), p['name']
+        except Exception:
+            continue
+    return raw_text, 'none'
 
 class VideoViewSet(viewsets.ViewSet):
 
@@ -346,10 +393,17 @@ class VideoViewSet(viewsets.ViewSet):
                 f.write(chunk)
         try:
             from .file_processor import extract_text_from_image
-            text = extract_text_from_image(tmp_path)
-            if not text:
+            raw_text, detected_lang = extract_text_from_image(tmp_path)
+            if not raw_text:
                 return Response({'error': 'No text found in image'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-            return Response({'text': text, 'char_count': len(text)})
+            corrected_text, provider = correct_ocr_text(raw_text)
+            return Response({
+                'text': corrected_text,
+                'raw_text': raw_text,
+                'detected_lang': detected_lang,
+                'ai_provider': provider,
+                'char_count': len(corrected_text)
+            })
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         finally:

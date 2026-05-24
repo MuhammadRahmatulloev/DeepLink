@@ -5,6 +5,8 @@ import openpyxl
 import pytesseract
 from PIL import Image
 
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
 
 def extract_text_from_pdf(file_path: str) -> str:
     doc = fitz.open(file_path)
@@ -32,14 +34,40 @@ def extract_text_from_xlsx(file_path: str) -> str:
     return '\n'.join(lines)
 
 
-def extract_text_from_image(file_path: str) -> str:
+def detect_language_and_extract(file_path: str) -> tuple[str, str]:
     image = Image.open(file_path)
-    return pytesseract.image_to_string(image).strip()
+
+    try:
+        osd = pytesseract.image_to_osd(image, output_type=pytesseract.Output.DICT)
+        script = osd.get('script', 'Latin')
+        script_to_lang = {
+            'Cyrillic': 'rus',
+            'Latin': 'eng',
+            'Arabic': 'ara',
+            'Chinese': 'chi_sim',
+            'Japanese': 'jpn',
+            'Korean': 'kor',
+        }
+        lang = script_to_lang.get(script, 'eng')
+    except Exception:
+        lang = 'rus+eng'
+
+    text = pytesseract.image_to_string(image, lang=lang).strip()
+    return text, lang
+
+
+def extract_text_from_image(file_path: str, language: str = 'auto') -> tuple[str, str]:
+    if language == 'auto':
+        return detect_language_and_extract(file_path)
+    lang_map = {'en': 'eng', 'ru': 'rus', 'tj': 'rus'}
+    lang = lang_map.get(language, 'eng')
+    image = Image.open(file_path)
+    text = pytesseract.image_to_string(image, lang=lang).strip()
+    return text, lang
 
 
 def extract_text(file_path: str, file_extension: str) -> str:
     ext = file_extension.lower()
-
     if ext == '.pdf':
         return extract_text_from_pdf(file_path)
     elif ext in ['.docx', '.doc']:
@@ -47,7 +75,8 @@ def extract_text(file_path: str, file_extension: str) -> str:
     elif ext in ['.xlsx', '.xls']:
         return extract_text_from_xlsx(file_path)
     elif ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']:
-        return extract_text_from_image(file_path)
+        text, _ = extract_text_from_image(file_path)
+        return text
     else:
         raise ValueError(f'Unsupported file type: {ext}')
 
