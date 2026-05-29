@@ -36,7 +36,7 @@ class VideoRepository(private val api: ApiService) {
     suspend fun getHistory(): Result<List<VideoHistoryItem>> = runCatching {
         val response = api.getVideoHistory()
         if (response.isSuccessful) {
-            response.body()?.results ?: emptyList()
+            response.body() ?: emptyList()
         } else {
             throw ApiException(parseError(response.errorBody()?.string()))
         }

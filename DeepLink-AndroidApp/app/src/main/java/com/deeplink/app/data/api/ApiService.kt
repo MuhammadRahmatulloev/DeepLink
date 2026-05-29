@@ -16,7 +16,6 @@ import com.deeplink.app.data.model.TokenResponse
 import com.deeplink.app.data.model.UpdateProfileRequest
 import com.deeplink.app.data.model.UserProfile
 import com.deeplink.app.data.model.VerifyEmailRequest
-import com.deeplink.app.data.model.PaginatedResponse
 import com.deeplink.app.data.model.VideoDetail
 import com.deeplink.app.data.model.VideoHistoryItem
 import okhttp3.MultipartBody
@@ -70,7 +69,7 @@ interface ApiService {
     suspend fun getTaskStatus(@Path("task_id") taskId: String): Response<TaskStatusResponse>
 
     @GET("videos/history/")
-    suspend fun getVideoHistory(): Response<PaginatedResponse<VideoHistoryItem>>
+    suspend fun getVideoHistory(): Response<List<VideoHistoryItem>>
 
     @GET("videos/{id}/")
     suspend fun getVideoDetail(@Path("id") id: Int): Response<VideoDetail>
