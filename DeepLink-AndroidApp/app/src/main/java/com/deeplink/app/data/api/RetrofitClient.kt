@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    const val BASE_URL = "http://127.0.0.1:8000/api/"
+    const val BASE_URL = "https://deeplink.softclub.win/api/"
 
     fun createApiService(tokenManager: TokenManager): ApiService {
         val logging = HttpLoggingInterceptor().apply {
