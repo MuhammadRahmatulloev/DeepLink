@@ -2,6 +2,7 @@ package com.deeplink.app.data.repository
 
 import com.deeplink.app.data.api.ApiService
 import com.deeplink.app.data.local.TokenManager
+import com.deeplink.app.data.model.GoogleSignInRequest
 import com.deeplink.app.data.model.LoginRequest
 import com.deeplink.app.data.model.ChangePasswordRequest
 import com.deeplink.app.data.model.ForgotPasswordRequest
@@ -48,6 +49,17 @@ class AuthRepository(
 
     suspend fun login(email: String, password: String): Result<UserProfile> = runCatching {
         val response = api.login(LoginRequest(email, password))
+        if (response.isSuccessful) {
+            val tokens = response.body() ?: throw ApiException("Empty response")
+            tokenManager.saveTokens(tokens.access, tokens.refresh)
+            getProfile().getOrThrow()
+        } else {
+            throw ApiException(parseError(response.errorBody()?.string()))
+        }
+    }
+
+    suspend fun loginWithGoogle(accessToken: String): Result<UserProfile> = runCatching {
+        val response = api.googleSignIn(GoogleSignInRequest(accessToken))
         if (response.isSuccessful) {
             val tokens = response.body() ?: throw ApiException("Empty response")
             tokenManager.saveTokens(tokens.access, tokens.refresh)

@@ -20,6 +20,10 @@ data class LoginRequest(
     val password: String
 )
 
+data class GoogleSignInRequest(
+    @SerializedName("access_token") val accessToken: String
+)
+
 data class ForgotPasswordRequest(
     val email: String
 )

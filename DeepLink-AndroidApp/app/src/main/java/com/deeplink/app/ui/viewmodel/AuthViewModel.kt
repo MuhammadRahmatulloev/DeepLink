@@ -105,6 +105,24 @@ class AuthViewModel(
         }
     }
 
+    fun loginWithGoogle(accessToken: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            authRepository.loginWithGoogle(accessToken)
+                .onSuccess { profile ->
+                    _uiState.update {
+                        it.copy(isLoading = false, profile = profile)
+                    }
+                    onSuccess()
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, error = e.userMessage())
+                    }
+                }
+        }
+    }
+
     fun forgotPassword(email: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null, successMessage = null) }

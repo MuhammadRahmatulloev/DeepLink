@@ -28,7 +28,7 @@ from django.conf import settings
 class AuthViewSet(viewsets.ViewSet):
 
     def get_permissions(self):
-        if self.action in ['register', 'login', 'verify_email', 'google_login']:
+        if self.action in ['register', 'login', 'verify_email', 'google_login', 'forgot_password', 'reset_password']:
             return [AllowAny()]
         return [IsAuthenticated()]
 
@@ -162,8 +162,8 @@ class AuthViewSet(viewsets.ViewSet):
         if not access_token:
             return Response({'error': 'access_token is required'}, status=status.HTTP_400_BAD_REQUEST)
         google_response = req.get(
-            'https://www.googleapis.com/oauth2/v3/userinfo',
-            headers={'Authorization': f'Bearer {access_token}'}
+            'https://oauth2.googleapis.com/tokeninfo',
+            params={'id_token': access_token}
         )
         if google_response.status_code != 200:
             return Response({'error': 'Invalid Google token'}, status=status.HTTP_401_UNAUTHORIZED)

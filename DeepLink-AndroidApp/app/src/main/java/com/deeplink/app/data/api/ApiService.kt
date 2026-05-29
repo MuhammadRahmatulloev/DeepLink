@@ -2,6 +2,7 @@ package com.deeplink.app.data.api
 
 import com.deeplink.app.data.model.ExtractImageResponse
 import com.deeplink.app.data.model.ChangePasswordRequest
+import com.deeplink.app.data.model.GoogleSignInRequest
 import com.deeplink.app.data.model.ForgotPasswordRequest
 import com.deeplink.app.data.model.LoginRequest
 import com.deeplink.app.data.model.LogoutRequest
@@ -15,6 +16,7 @@ import com.deeplink.app.data.model.TokenResponse
 import com.deeplink.app.data.model.UpdateProfileRequest
 import com.deeplink.app.data.model.UserProfile
 import com.deeplink.app.data.model.VerifyEmailRequest
+import com.deeplink.app.data.model.PaginatedResponse
 import com.deeplink.app.data.model.VideoDetail
 import com.deeplink.app.data.model.VideoHistoryItem
 import okhttp3.MultipartBody
@@ -39,6 +41,9 @@ interface ApiService {
 
     @POST("auth/login/")
     suspend fun login(@Body body: LoginRequest): Response<TokenResponse>
+
+    @POST("auth/google/")
+    suspend fun googleSignIn(@Body body: GoogleSignInRequest): Response<TokenResponse>
 
     @POST("auth/forgot-password/")
     suspend fun forgotPassword(@Body body: ForgotPasswordRequest): Response<MessageResponse>
@@ -65,7 +70,7 @@ interface ApiService {
     suspend fun getTaskStatus(@Path("task_id") taskId: String): Response<TaskStatusResponse>
 
     @GET("videos/history/")
-    suspend fun getVideoHistory(): Response<List<VideoHistoryItem>>
+    suspend fun getVideoHistory(): Response<PaginatedResponse<VideoHistoryItem>>
 
     @GET("videos/{id}/")
     suspend fun getVideoDetail(@Path("id") id: Int): Response<VideoDetail>
