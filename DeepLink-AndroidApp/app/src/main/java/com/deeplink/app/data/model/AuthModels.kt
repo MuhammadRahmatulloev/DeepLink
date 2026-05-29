@@ -20,6 +20,27 @@ data class LoginRequest(
     val password: String
 )
 
+data class ForgotPasswordRequest(
+    val email: String
+)
+
+data class ResetPasswordRequest(
+    val email: String,
+    val code: String,
+    @SerializedName("new_password") val newPassword: String
+)
+
+data class UpdateProfileRequest(
+    val username: String,
+    val language: String
+)
+
+data class ChangePasswordRequest(
+    @SerializedName("old_password") val oldPassword: String,
+    @SerializedName("new_password") val newPassword: String,
+    @SerializedName("new_password2") val newPassword2: String
+)
+
 data class LogoutRequest(
     val refresh: String
 )

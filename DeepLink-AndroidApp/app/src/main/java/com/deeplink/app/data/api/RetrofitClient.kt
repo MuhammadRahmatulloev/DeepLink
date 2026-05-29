@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    const val BASE_URL = "http://192.168.1.6:8000/api/"
+    const val BASE_URL = "http://127.0.0.1:8000/api/"
 
     fun createApiService(tokenManager: TokenManager): ApiService {
         val logging = HttpLoggingInterceptor().apply {

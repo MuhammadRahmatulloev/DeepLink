@@ -12,10 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,9 +33,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.deeplink.app.data.model.UserProfile
-import com.deeplink.app.ui.components.ExplanationResultCard
+import com.deeplink.app.ui.components.AnimatedPrimaryButton
+import com.deeplink.app.ui.components.AppCard
+import com.deeplink.app.ui.components.EmptyStateIllustration
+import com.deeplink.app.ui.components.GradientTitle
+import com.deeplink.app.ui.components.ScreenEnterAnimation
+import com.deeplink.app.ui.components.SkeletonBlock
 import com.deeplink.app.ui.components.LanguageDropdown
-import com.deeplink.app.ui.components.ProcessingCard
 import com.deeplink.app.ui.components.normalizeLanguageCode
 import com.deeplink.app.ui.viewmodel.HomeViewModel
 
@@ -93,103 +93,99 @@ fun HomeScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Top
-        ) {
-            profile?.let {
-                Text(
-                    text = "Hello, ${it.username ?: it.email ?: "User"}",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            Text(
-                text = "Process YouTube Video",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Paste a YouTube URL to extract and process content",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            OutlinedTextField(
-                value = url,
-                onValueChange = { url = it },
-                label = { Text("YouTube URL") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = false,
-                minLines = 2
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            LanguageDropdown(
-                selectedCode = language,
-                onLanguageSelected = { language = it },
-                enabled = !uiState.isLoading && !uiState.isPolling
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { homeViewModel.processVideo(url.trim(), language) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading && !uiState.isPolling && url.isNotBlank()
+        ScreenEnterAnimation {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.Top
             ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(20.dp),
-                        strokeWidth = 2.dp
+                GradientTitle("DeepLink")
+                profile?.let {
+                    Text(
+                        text = "Welcome back, ${it.username ?: it.email ?: "User"}",
+                        style = MaterialTheme.typography.bodyLarge
                     )
-                } else {
-                    Text("Process Video")
                 }
-            }
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "More options",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = onNavigateToFileUpload,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isPolling
-            ) {
-                Text("Upload Document / File")
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onNavigateToImageOcr,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isPolling
-            ) {
-                Text("Image OCR")
-            }
+                AppCard(modifier = Modifier.fillMaxWidth()) {
+                    Text("Process YouTube Video", style = MaterialTheme.typography.titleLarge)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = url,
+                        onValueChange = { url = it },
+                        label = { Text("YouTube URL") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    LanguageDropdown(
+                        selectedCode = language,
+                        onLanguageSelected = { language = it },
+                        enabled = !uiState.isLoading && !uiState.isPolling
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    AnimatedPrimaryButton(
+                        text = "Process Video",
+                        onClick = { homeViewModel.processVideo(url.trim(), language) },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !uiState.isLoading && !uiState.isPolling && url.isNotBlank(),
+                        isLoading = uiState.isLoading
+                    )
+                }
 
-            if (uiState.isPolling && uiState.explanation == null) {
-                Spacer(modifier = Modifier.height(24.dp))
-                ProcessingCard(
-                    statusText = uiState.taskStatus?.status ?: "pending",
-                    errorText = uiState.taskStatus?.error
-                )
-            }
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onNavigateToFileUpload,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isPolling
+                ) { Text("Upload Document / File") }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onNavigateToImageOcr,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isPolling
+                ) { Text("Image OCR") }
 
-            uiState.explanation?.let { explanation ->
-                Spacer(modifier = Modifier.height(24.dp))
-                ExplanationResultCard(explanation = explanation)
-            }
+                if (uiState.isPolling && uiState.explanation == null) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    AppCard(modifier = Modifier.fillMaxWidth()) {
+                        Text("Processing...", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        SkeletonBlock(modifier = Modifier.fillMaxWidth().height(18.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SkeletonBlock(modifier = Modifier.fillMaxWidth().height(18.dp))
+                    }
+                }
 
-            if (uiState.explanation == null && uiState.transcript != null) {
-                Spacer(modifier = Modifier.height(24.dp))
-                ExplanationResultCard(explanation = uiState.transcript!!)
+                if (uiState.explanation == null && uiState.transcript == null && !uiState.isPolling) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    EmptyStateIllustration(
+                        icon = Icons.Default.History,
+                        title = "No processed result yet",
+                        subtitle = "Paste a link to generate transcript and explanation."
+                    )
+                }
+
+                uiState.transcript?.let {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    AppCard(modifier = Modifier.fillMaxWidth()) {
+                        Text("Transcript", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(it, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                uiState.explanation?.let {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    AppCard(modifier = Modifier.fillMaxWidth()) {
+                        Text("Explanation", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(it, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
             }
         }
     }

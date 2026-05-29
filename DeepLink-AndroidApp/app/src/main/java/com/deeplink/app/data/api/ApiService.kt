@@ -1,14 +1,18 @@
 package com.deeplink.app.data.api
 
 import com.deeplink.app.data.model.ExtractImageResponse
+import com.deeplink.app.data.model.ChangePasswordRequest
+import com.deeplink.app.data.model.ForgotPasswordRequest
 import com.deeplink.app.data.model.LoginRequest
 import com.deeplink.app.data.model.LogoutRequest
 import com.deeplink.app.data.model.MessageResponse
 import com.deeplink.app.data.model.ProcessVideoRequest
 import com.deeplink.app.data.model.ProcessVideoResponse
 import com.deeplink.app.data.model.RegisterRequest
+import com.deeplink.app.data.model.ResetPasswordRequest
 import com.deeplink.app.data.model.TaskStatusResponse
 import com.deeplink.app.data.model.TokenResponse
+import com.deeplink.app.data.model.UpdateProfileRequest
 import com.deeplink.app.data.model.UserProfile
 import com.deeplink.app.data.model.VerifyEmailRequest
 import com.deeplink.app.data.model.VideoDetail
@@ -20,6 +24,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
@@ -35,11 +40,23 @@ interface ApiService {
     @POST("auth/login/")
     suspend fun login(@Body body: LoginRequest): Response<TokenResponse>
 
+    @POST("auth/forgot-password/")
+    suspend fun forgotPassword(@Body body: ForgotPasswordRequest): Response<MessageResponse>
+
+    @POST("auth/reset-password/")
+    suspend fun resetPassword(@Body body: ResetPasswordRequest): Response<MessageResponse>
+
     @POST("auth/logout/")
     suspend fun logout(@Body body: LogoutRequest): Response<Unit>
 
     @GET("auth/profile/")
     suspend fun getProfile(): Response<UserProfile>
+
+    @PATCH("auth/profile/")
+    suspend fun updateProfile(@Body body: UpdateProfileRequest): Response<UserProfile>
+
+    @POST("auth/change-password/")
+    suspend fun changePassword(@Body body: ChangePasswordRequest): Response<MessageResponse>
 
     @POST("videos/process/")
     suspend fun processVideo(@Body body: ProcessVideoRequest): Response<ProcessVideoResponse>

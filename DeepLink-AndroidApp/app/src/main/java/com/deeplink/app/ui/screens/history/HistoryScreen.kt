@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,6 +47,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.deeplink.app.data.model.VideoHistoryItem
+import com.deeplink.app.ui.components.AppCard
+import com.deeplink.app.ui.components.EmptyStateIllustration
+import com.deeplink.app.ui.components.ScreenEnterAnimation
+import com.deeplink.app.ui.components.SkeletonBlock
+import com.deeplink.app.ui.components.StatusChip
 import com.deeplink.app.ui.viewmodel.HistoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,14 +129,11 @@ fun HistoryScreen(
     ) { padding ->
         when {
             uiState.isLoading -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator()
+                Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+                    repeat(5) {
+                        SkeletonBlock(modifier = Modifier.fillMaxWidth().height(90.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
                 }
             }
             uiState.error != null && uiState.videos.isEmpty() -> {
@@ -157,31 +160,26 @@ fun HistoryScreen(
                         .padding(padding)
                 ) {
                     if (uiState.videos.isEmpty()) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "No history yet",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        EmptyStateIllustration(
+                            icon = Icons.Default.HourglassEmpty,
+                            title = "No history yet",
+                            subtitle = "Processed videos will appear here.",
+                            modifier = Modifier.fillMaxSize().padding(24.dp)
+                        )
                     } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(uiState.videos, key = { it.id }) { video ->
-                                SwipeableHistoryItem(
-                                    video = video,
-                                    onClick = { onNavigateToDetail(video.id) },
-                                    onDelete = { videoToDelete = video }
-                                )
+                        ScreenEnterAnimation {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(uiState.videos, key = { it.id }) { video ->
+                                    SwipeableHistoryItem(
+                                        video = video,
+                                        onClick = { onNavigateToDetail(video.id) },
+                                        onDelete = { videoToDelete = video }
+                                    )
+                                }
                             }
                         }
                     }
@@ -243,18 +241,15 @@ private fun VideoHistoryCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
-    Card(
+    AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
-            ),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column {
             Text(
                 text = video.title ?: "Video #${video.id}",
                 style = MaterialTheme.typography.titleSmall,
@@ -272,10 +267,7 @@ private fun VideoHistoryCard(
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Status: ${video.status ?: "unknown"}",
-                style = MaterialTheme.typography.labelMedium
-            )
+            StatusChip(video.status ?: "unknown")
             video.createdAt?.let {
                 Text(
                     text = it,

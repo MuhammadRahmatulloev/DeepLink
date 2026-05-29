@@ -15,11 +15,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.deeplink.app.data.util.MultipartHelper
+import com.deeplink.app.ui.components.AnimatedPrimaryButton
+import com.deeplink.app.ui.components.AppCard
 import com.deeplink.app.ui.viewmodel.OcrViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,23 +101,18 @@ fun ImageOcrScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top
         ) {
-            Text(
-                text = "Extract text from an image",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Select a photo containing text to run OCR",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            OutlinedButton(
-                onClick = { imagePicker.launch("image/*") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(horizontalArrangement = Arrangement.Center) {
+            AppCard(modifier = Modifier.fillMaxWidth()) {
+                Text(text = "Extract text from image", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(Icons.Default.CameraAlt, contentDescription = null)
+                    Icon(Icons.Default.Collections, contentDescription = null)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { imagePicker.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Icon(Icons.Default.Image, contentDescription = null)
                     Text(
                         text = uiState.selectedImageName ?: "Choose Image",
@@ -136,30 +131,18 @@ fun ImageOcrScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
+            AnimatedPrimaryButton(
+                text = "Extract Text",
                 onClick = { viewModel.extractText(language.trim()) },
                 modifier = Modifier.fillMaxWidth(),
+                isLoading = uiState.isLoading,
                 enabled = !uiState.isLoading && uiState.selectedImageName != null
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(20.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text("Extract Text")
-                }
-            }
+            )
 
             uiState.extractedText?.let { text ->
                 Spacer(modifier = Modifier.height(24.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                AppCard(modifier = Modifier.fillMaxWidth()) {
+                    Column {
                         Text(
                             text = "Extracted Text",
                             style = MaterialTheme.typography.titleSmall

@@ -15,11 +15,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.UploadFile
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,9 +43,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.deeplink.app.data.util.MultipartHelper
 import com.deeplink.app.data.util.SupportedUploadMime
-import com.deeplink.app.ui.components.ExplanationResultCard
+import com.deeplink.app.ui.components.AnimatedPrimaryButton
+import com.deeplink.app.ui.components.AppCard
 import com.deeplink.app.ui.components.LanguageDropdown
-import com.deeplink.app.ui.components.ProcessingCard
+import com.deeplink.app.ui.components.SkeletonBlock
 import com.deeplink.app.ui.components.normalizeLanguageCode
 import com.deeplink.app.ui.viewmodel.FileUploadViewModel
 
@@ -114,51 +114,36 @@ fun FileUploadScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top
         ) {
-            Text(
-                text = "Upload a document or file",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "PDF, DOCX, XLSX, TXT, or images",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            OutlinedButton(
-                onClick = { filePicker.launch(SupportedUploadMime.PICKER_INPUT) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading && !uiState.isPolling
-            ) {
-                Row(horizontalArrangement = Arrangement.Center) {
+            AppCard(modifier = Modifier.fillMaxWidth()) {
+                Text(text = "Upload a document or file", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(Icons.Default.Description, contentDescription = null)
+                    Icon(Icons.Default.Image, contentDescription = null)
+                    Icon(Icons.Default.InsertDriveFile, contentDescription = null)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { filePicker.launch(SupportedUploadMime.PICKER_INPUT) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isLoading && !uiState.isPolling
+                ) {
                     Icon(Icons.Default.UploadFile, contentDescription = null)
-                    Text(
-                        text = "Choose File",
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
+                    Text(text = "Choose File", modifier = Modifier.padding(start = 8.dp))
                 }
             }
 
             uiState.selectedFileName?.let { fileName ->
                 Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                AppCard(modifier = Modifier.fillMaxWidth()) {
+                    Column {
                         Text(
                             text = "Selected file",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = fileName,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Text(text = fileName, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -172,37 +157,27 @@ fun FileUploadScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
+            AnimatedPrimaryButton(
+                text = "Upload & Process",
                 onClick = { viewModel.uploadFile(language) },
                 modifier = Modifier.fillMaxWidth(),
+                isLoading = uiState.isLoading,
                 enabled = !uiState.isLoading && !uiState.isPolling && uiState.selectedFileName != null
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(20.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text("Upload & Process")
-                }
-            }
+            )
 
             if (uiState.isPolling && uiState.explanation == null) {
                 Spacer(modifier = Modifier.height(24.dp))
-                ProcessingCard(
-                    statusText = uiState.taskStatus?.status ?: "pending",
-                    errorText = uiState.taskStatus?.error
-                )
+                SkeletonBlock(modifier = Modifier.fillMaxWidth().height(100.dp))
             }
 
             uiState.explanation?.let { explanation ->
                 Spacer(modifier = Modifier.height(24.dp))
-                ExplanationResultCard(explanation = explanation)
+                AppCard(modifier = Modifier.fillMaxWidth()) { Text(explanation) }
             }
 
             if (uiState.explanation == null && uiState.transcript != null) {
                 Spacer(modifier = Modifier.height(24.dp))
-                ExplanationResultCard(explanation = uiState.transcript!!)
+                AppCard(modifier = Modifier.fillMaxWidth()) { Text(uiState.transcript!!) }
             }
         }
     }

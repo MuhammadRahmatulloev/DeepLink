@@ -189,6 +189,44 @@ class AuthViewSet(viewsets.ViewSet):
             'user': UserSerializer(user).data,
             'created': created
         })
+    @action(detail=False, methods=['post'], url_path='forgot-password', parser_classes=[JSONParser])
+    def forgot_password(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'message': 'If this email exists, a reset code has been sent.'})
+        token = EmailVerificationToken.objects.create(user=user)
+        send_mail(
+            subject='DeepLink password reset code',
+            message=f'Your password reset code: {token.code}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        return Response({'message': 'If this email exists, a reset code has been sent.'})
+    
+    @action(detail=False, methods=['post'], url_path='reset-password', parser_classes=[JSONParser])
+    def reset_password(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        new_password = request.data.get('new_password')
+        if not all([email, code, new_password]):
+            return Response({'error': 'email, code and new_password are required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(email=email)
+            verification = EmailVerificationToken.objects.filter(
+                user=user, code=code, is_used=False
+            ).latest('created_at')
+        except (User.DoesNotExist, EmailVerificationToken.DoesNotExist):
+            return Response({'error': 'Invalid code or email'}, status=status.HTTP_400_BAD_REQUEST)
+        user.set_password(new_password)
+        user.save()
+        verification.is_used = True
+        verification.save()
+        return Response({'message': 'Password reset successfully. You can now log in.'})
 
 def correct_ocr_text(raw_text: str) -> tuple[str, str]:
     import httpx

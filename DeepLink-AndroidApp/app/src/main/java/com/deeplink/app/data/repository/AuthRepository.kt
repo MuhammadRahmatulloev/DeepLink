@@ -3,8 +3,12 @@ package com.deeplink.app.data.repository
 import com.deeplink.app.data.api.ApiService
 import com.deeplink.app.data.local.TokenManager
 import com.deeplink.app.data.model.LoginRequest
+import com.deeplink.app.data.model.ChangePasswordRequest
+import com.deeplink.app.data.model.ForgotPasswordRequest
 import com.deeplink.app.data.model.LogoutRequest
 import com.deeplink.app.data.model.RegisterRequest
+import com.deeplink.app.data.model.ResetPasswordRequest
+import com.deeplink.app.data.model.UpdateProfileRequest
 import com.deeplink.app.data.model.UserProfile
 import com.deeplink.app.data.model.VerifyEmailRequest
 import com.google.gson.Gson
@@ -53,6 +57,27 @@ class AuthRepository(
         }
     }
 
+    suspend fun forgotPassword(email: String): Result<String> = runCatching {
+        val response = api.forgotPassword(ForgotPasswordRequest(email))
+        if (response.isSuccessful) {
+            response.body()?.detail ?: response.body()?.message ?: "Code sent to email"
+        } else {
+            throw ApiException(parseError(response.errorBody()?.string()))
+        }
+    }
+
+    suspend fun resetPassword(email: String, code: String, newPassword: String): Result<String> =
+        runCatching {
+            val response = api.resetPassword(
+                ResetPasswordRequest(email = email, code = code, newPassword = newPassword)
+            )
+            if (response.isSuccessful) {
+                response.body()?.detail ?: response.body()?.message ?: "Password reset successful"
+            } else {
+                throw ApiException(parseError(response.errorBody()?.string()))
+            }
+        }
+
     suspend fun logout(): Result<Unit> = runCatching {
         val refresh = tokenManager.refreshToken
         if (!refresh.isNullOrBlank()) {
@@ -69,6 +94,34 @@ class AuthRepository(
         val response = api.getProfile()
         if (response.isSuccessful) {
             response.body() ?: throw ApiException("Empty profile")
+        } else {
+            throw ApiException(parseError(response.errorBody()?.string()))
+        }
+    }
+
+    suspend fun updateProfile(username: String, language: String): Result<UserProfile> = runCatching {
+        val response = api.updateProfile(UpdateProfileRequest(username = username, language = language))
+        if (response.isSuccessful) {
+            response.body() ?: throw ApiException("Profile updated but empty response")
+        } else {
+            throw ApiException(parseError(response.errorBody()?.string()))
+        }
+    }
+
+    suspend fun changePassword(
+        oldPassword: String,
+        newPassword: String,
+        newPassword2: String
+    ): Result<String> = runCatching {
+        val response = api.changePassword(
+            ChangePasswordRequest(
+                oldPassword = oldPassword,
+                newPassword = newPassword,
+                newPassword2 = newPassword2
+            )
+        )
+        if (response.isSuccessful) {
+            response.body()?.detail ?: response.body()?.message ?: "Password changed successfully"
         } else {
             throw ApiException(parseError(response.errorBody()?.string()))
         }

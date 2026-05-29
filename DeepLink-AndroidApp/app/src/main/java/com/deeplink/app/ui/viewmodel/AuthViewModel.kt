@@ -39,6 +39,10 @@ class AuthViewModel(
         _uiState.update { it.copy(error = null, successMessage = null) }
     }
 
+    fun setSuccessMessage(message: String) {
+        _uiState.update { it.copy(successMessage = message, error = null) }
+    }
+
     fun register(
         email: String,
         username: String,
@@ -101,6 +105,47 @@ class AuthViewModel(
         }
     }
 
+    fun forgotPassword(email: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null, successMessage = null) }
+            authRepository.forgotPassword(email)
+                .onSuccess { message ->
+                    _uiState.update {
+                        it.copy(isLoading = false, successMessage = message)
+                    }
+                    onSuccess()
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, error = e.userMessage())
+                    }
+                }
+        }
+    }
+
+    fun resetPassword(
+        email: String,
+        code: String,
+        newPassword: String,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null, successMessage = null) }
+            authRepository.resetPassword(email, code, newPassword)
+                .onSuccess { message ->
+                    _uiState.update {
+                        it.copy(isLoading = false, successMessage = message)
+                    }
+                    onSuccess()
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, error = e.userMessage())
+                    }
+                }
+        }
+    }
+
     fun logout(onComplete: () -> Unit) {
         viewModelScope.launch {
             authRepository.logout()
@@ -114,6 +159,45 @@ class AuthViewModel(
             authRepository.getProfile()
                 .onSuccess { profile ->
                     _uiState.update { it.copy(profile = profile) }
+                }
+        }
+    }
+
+    fun updateProfile(username: String, language: String, onSuccess: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null, successMessage = null) }
+            authRepository.updateProfile(username, language)
+                .onSuccess { profile ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            profile = profile,
+                            successMessage = "Profile updated successfully"
+                        )
+                    }
+                    onSuccess?.invoke()
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, error = e.userMessage())
+                    }
+                }
+        }
+    }
+
+    fun changePassword(oldPassword: String, newPassword: String, newPassword2: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null, successMessage = null) }
+            authRepository.changePassword(oldPassword, newPassword, newPassword2)
+                .onSuccess { message ->
+                    _uiState.update {
+                        it.copy(isLoading = false, successMessage = message)
+                    }
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, error = e.userMessage())
+                    }
                 }
         }
     }

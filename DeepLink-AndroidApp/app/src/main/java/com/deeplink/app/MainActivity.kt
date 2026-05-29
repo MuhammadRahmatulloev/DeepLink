@@ -6,6 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.deeplink.app.ui.navigation.DeepLinkNavGraph
@@ -28,7 +32,8 @@ class MainActivity : ComponentActivity() {
         val startDestination = if (app.authRepository.isLoggedIn()) Routes.HOME else Routes.LOGIN
 
         setContent {
-            DeepLinkTheme {
+            var darkThemeEnabled by rememberSaveable { mutableStateOf(true) }
+            DeepLinkTheme(darkTheme = darkThemeEnabled) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val authViewModel: AuthViewModel = viewModel(
                         factory = ViewModelFactory { AuthViewModel(app.authRepository) }
@@ -62,6 +67,8 @@ class MainActivity : ComponentActivity() {
                         fileUploadViewModel = fileUploadViewModel,
                         ocrViewModel = ocrViewModel,
                         videoDetailViewModel = videoDetailViewModel,
+                        isDarkTheme = darkThemeEnabled,
+                        onToggleTheme = { darkThemeEnabled = !darkThemeEnabled },
                         startDestination = startDestination
                     )
                 }

@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.deeplink.app.ui.screens.auth.ForgotPasswordScreen
 import com.deeplink.app.ui.screens.auth.LoginScreen
 import com.deeplink.app.ui.screens.auth.RegisterScreen
 import com.deeplink.app.ui.screens.auth.VerifyEmailScreen
@@ -16,6 +17,8 @@ import com.deeplink.app.ui.screens.history.HistoryScreen
 import com.deeplink.app.ui.screens.history.VideoDetailScreen
 import com.deeplink.app.ui.screens.home.HomeScreen
 import com.deeplink.app.ui.screens.ocr.ImageOcrScreen
+import com.deeplink.app.ui.screens.profile.ChangePasswordScreen
+import com.deeplink.app.ui.screens.profile.EditProfileScreen
 import com.deeplink.app.ui.screens.profile.ProfileScreen
 import com.deeplink.app.ui.screens.upload.FileUploadScreen
 import com.deeplink.app.ui.viewmodel.AuthViewModel
@@ -37,6 +40,8 @@ fun DeepLinkNavGraph(
     fileUploadViewModel: FileUploadViewModel,
     ocrViewModel: OcrViewModel,
     videoDetailViewModel: VideoDetailViewModel,
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
     startDestination: String
 ) {
     val authState by authViewModel.uiState.collectAsState()
@@ -55,6 +60,22 @@ fun DeepLinkNavGraph(
                 },
                 onNavigateToRegister = {
                     navController.navigate(Routes.REGISTER)
+                },
+                onNavigateToForgotPassword = {
+                    navController.navigate(Routes.FORGOT_PASSWORD)
+                }
+            )
+        }
+
+        composable(Routes.FORGOT_PASSWORD) {
+            ForgotPasswordScreen(
+                viewModel = authViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onPasswordResetSuccess = {
+                    authViewModel.setSuccessMessage("Password reset successful. Please sign in.")
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.FORGOT_PASSWORD) { inclusive = true }
+                    }
                 }
             )
         }
@@ -110,6 +131,10 @@ fun DeepLinkNavGraph(
             ProfileScreen(
                 profile = authState.profile,
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
+                onNavigateToChangePassword = { navController.navigate(Routes.CHANGE_PASSWORD) },
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme,
                 onLogout = {
                     authViewModel.logout {
                         navController.navigate(Routes.LOGIN) {
@@ -117,6 +142,20 @@ fun DeepLinkNavGraph(
                         }
                     }
                 }
+            )
+        }
+
+        composable(Routes.EDIT_PROFILE) {
+            EditProfileScreen(
+                viewModel = authViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.CHANGE_PASSWORD) {
+            ChangePasswordScreen(
+                viewModel = authViewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
